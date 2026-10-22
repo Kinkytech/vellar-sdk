@@ -132,6 +132,8 @@ export const DOC_PAGES: DocPage[] = [
     description: "How the independent Stellar indexer classifies x402 payments and what the attribution numbers mean." },
   { slug: "reference/license", title: "License and Versioning", nav: "License", section: "Reference", tab: "reference",
     description: "SDK MIT, facilitator open-source, versioning policy, and changelog location." },
+  { slug: "reference/subresource-integrity", title: "Subresource Integrity for CDN Loads", nav: "CDN integrity (SRI)", section: "Reference", tab: "reference",
+    description: "How to pin an SRI hash when loading vellar-sdk from a CDN like unpkg or jsDelivr instead of installing it from npm." },
 
   // Operators — running your own facilitator rather than the hosted instance.
   { slug: "operators/run", title: "Run the Facilitator", nav: "Run", section: "Operators", tab: "guides",

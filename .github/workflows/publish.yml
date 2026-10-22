@@ -46,6 +46,21 @@ jobs:
             exit 1
           fi
 
+      # Subresource Integrity hashes for every dist/ file, generated from this
+      # exact build before publish. Written into the tarball (dist/ is already
+      # in package.json "files") and attached to the GitHub Release so a CDN
+      # consumer (see docs/reference/subresource-integrity.md) can pin an
+      # integrity="sha384-..." without trusting the CDN to tell them the hash.
+      - run: node scripts/generate-sri-hashes.mjs --write
+
       - run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Attach SRI hashes to the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "$GITHUB_REF_NAME" dist/sri-hashes.json \
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber
