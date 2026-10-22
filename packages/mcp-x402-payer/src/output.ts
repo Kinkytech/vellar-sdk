@@ -32,6 +32,7 @@ import {
   sanitizeMetadata as sanitizeMetadataText,
   type SanitizeOptions,
 } from "vellar-sdk/x402-untrusted";
+import { resolveLogLevel, shouldLog, type LogLevel as SharedLogLevel } from "vellar-sdk/log-level";
 
 export { sanitizeUntrusted, terminatorOf, type SanitizeOptions } from "vellar-sdk/x402-untrusted";
 
@@ -171,8 +172,32 @@ export function divertStdoutToStderr(): () => void {
   };
 }
 
-/** Structured log line → stderr. NEVER stdout: stdout is the MCP transport. */
+/**
+ * The effective log level for this process, per the shared
+ * `VELLAR_LOG_LEVEL` convention (see `vellar-sdk/log-level`). Read lazily on
+ * each call rather than cached at module load, so tests can flip
+ * `process.env.VELLAR_LOG_LEVEL` and see the change take effect without a
+ * module reset, and so a long-lived server process picks up an env change
+ * made before a signal-driven reload.
+ */
+function effectiveLogLevel(): SharedLogLevel {
+  return resolveLogLevel();
+}
+
+/**
+ * Structured log line → stderr. NEVER stdout: stdout is the MCP transport.
+ *
+ * Gated by the shared log-level config: `shouldLog` is checked BEFORE
+ * `JSON.stringify` or any field formatting runs, so a quieted level (e.g.
+ * `VELLAR_LOG_LEVEL=error` suppressing "info") also skips the cost of
+ * serializing fields nobody will read. This never changes the stdout/stderr
+ * routing above: a log suppressed by level is simply not written, not
+ * redirected, so security audit V-4's stdout discipline is unaffected either
+ * way.
+ */
 export function log(level: LogLevel, message: string, fields: Record<string, unknown> = {}): void {
+  if (!shouldLog(level, effectiveLogLevel())) return;
+
   const line = {
     level,
     msg: message,
